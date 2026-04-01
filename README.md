@@ -33,4 +33,5 @@ Agentic AI refers to a system where AI "agents" are given specific roles, tools,
 ## 🚀 Future Scope
 - **Milestone 2:** Functional prototype with GPT-4o integration.
 - **Milestone 3:** Advanced RAG (Retrieval Augmented Generation) for documentation search.
-- **Final:** Interactive dashboard and live human-agent handoff system.
+- **Final:** Interactive dashboard and live human-agent handoff system.                                                                                 <img width="893" height="1558" alt="image" src="https://github.com/user-attachments/assets/a7e410fc-520c-4dc5-ae68-7aed07fdd9d8" />
+
