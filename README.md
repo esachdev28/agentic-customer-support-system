@@ -74,6 +74,8 @@ Routing rules:
 
 ### 4. FAQ Agent (RAG)
 
+Drive Link of doc: https://drive.google.com/drive/folders/1dk0CO7w-B_rzbMS9WP2CykYmFaBmBehJ?usp=drive_link
+
 * Uses **Pinecone vector DB**
 * Retrieves answers from knowledge base
 * If no match → returns `NO_MATCH`
