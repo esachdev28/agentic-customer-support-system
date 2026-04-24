@@ -1,58 +1,58 @@
 # Agentic Customer Support System 🤖🎧
 
-![Project Logo](project_logo.png)
-
 ---
 
 ## 🌟 Project Overview
 
-The **Agentic Customer Support System** is a next-generation support framework powered by a **multi-agent AI architecture**. Unlike traditional chatbots, this system intelligently routes, analyzes, and resolves customer queries using specialized AI agents, while seamlessly escalating critical cases to human support.
+The **Agentic Customer Support System** is a real-time, multi-agent AI support system that combines **automation + human escalation**.
+
+It is designed to:
+
+* Instantly resolve simple queries
+* Intelligently escalate complex or risky cases
+* Maintain seamless real-time communication
 
 ---
 
-## 🔴 Problem Statement
+## 🔴 Core Problem
 
-Modern businesses struggle with **Support Debt**:
+Traditional systems suffer from:
 
-* **Latency:** Customers expect instant responses, not hours
-* **Rigidity:** Traditional bots fail on complex or emotional queries
-* **Cost:** Scaling human teams for 24/7 support is expensive
-
----
-
-## 💡 Solution Overview
-
-We built an **Agentic AI orchestration system using n8n**, where:
-
-* Simple queries → **resolved instantly via FAQ (RAG)**
-* Complex / negative / unsafe queries → **escalated to humans**
-* All interactions → **logged + analyzed for insights**
+* Slow responses (latency)
+* Rigid bots that fail on real-world queries
+* High cost of scaling human support
 
 ---
 
-## 🧠 Agent Architecture
+## 💡 Solution
 
-### 🔹 1. Intake Classifier Agent
+A **hybrid AI + human system** with:
 
-* Classifies query into:
+* 🤖 AI agents for automation
+* 👩‍💻 Human takeover when needed
+* ⚡ Real-time messaging (no refresh, no delay)
+
+---
+
+## 🧠 Architecture Overview
+
+### 1. Intake Classifier Agent
+
+* Classifies query:
 
   * billing, technical, account, refund, shipping, general
-* Assigns **urgency (low / medium / high)**
-* Extracts **context summary**
+* Assigns urgency (low / medium / high)
+* Extracts context
 
 ---
 
-### 🔹 2. Sentiment & Safety Analyzer Agent
-
-Goes beyond basic sentiment:
+### 2. Sentiment & Safety Analyzer
 
 * Detects:
 
-  * sentiment → positive / neutral / frustrated / angry / threatening
-  * bad words / abusive language
+  * sentiment (positive → threatening)
+  * abusive language
   * urgency signals
-  * threats
-
 * Outputs:
 
   * `hasBadWords`
@@ -62,202 +62,216 @@ Goes beyond basic sentiment:
 
 ---
 
-### 🔹 3. Decision Layer (Orchestration Logic)
+### 3. Decision Layer (n8n IF Logic)
 
-Built using **n8n IF nodes**
+Routing rules:
 
-Routing logic:
-
-* 🚨 If:
-
-  * bad words OR threatening → **IMMEDIATE ESCALATION**
-* ⚠️ Else if:
-
-  * high urgency + angry → **ESCALATION**
-* 📚 Else:
-
-  * goes to **FAQ Agent**
+* 🚨 Bad words OR threats → **Immediate escalation**
+* ⚠️ Angry + high urgency → **Escalation**
+* 📚 Otherwise → **FAQ agent**
 
 ---
 
-### 🔹 4. FAQ Responder Agent (RAG)
+### 4. FAQ Agent (RAG)
 
-* Uses **Pinecone Vector DB**
+* Uses **Pinecone vector DB**
 * Retrieves answers from knowledge base
-* Rules:
-
-  * MUST use vector store
-  * If no answer → returns `NO_MATCH`
+* If no match → returns `NO_MATCH`
 
 ---
 
-### 🔹 5. Escalation Handler Agent
+### 5. Escalation System
 
 Triggered when:
 
-* sentiment is negative / angry / threatening
-* FAQ fails (`NO_MATCH`)
-* unsafe content detected
+* Unsafe content
+* Negative sentiment
+* FAQ failure
 
-Creates a structured **support ticket**
-
----
-
-## 🧾 Support Ticket Structure (Dynamic)
-
-Stored in database:
-
-* message
-* category
-* urgency
-* context
-* sentiment
-* escalation_reason
-* is_highly_urgent
-* is_threatening
-* has_bad_words
-* priority (P1 / P2 / P3)
-* status (ESCALATED / resolved)
-* type (human_support / faq_response)
-* created_at
+Creates a structured escalation entry in database.
 
 ---
 
-## 🗄️ Logging & Storage (Supabase)
+## ⚡ Real-Time Chat System (KEY FEATURE)
 
-We integrated **Supabase (PostgreSQL)** for:
+### 🔌 WebSocket-Based (Supabase Realtime)
 
-* ✅ Storing all support interactions
-* ✅ Logging escalations & resolutions
-* ✅ Tracking sentiment trends
-* ✅ Enabling analytics dashboards
+* Uses **WebSockets (NOT polling)**
+* Instant updates:
 
-### Table: `support_logs`
+  * No refresh
+  * No waiting
+  * No repeated checking
 
-All tickets (FAQ + escalated) are stored here.
-
----
-
-## 📊 Analytics Dashboard
-
-Using Supabase data, we can build dashboards (Power BI / Metabase / Supabase Studio):
-
-### Metrics tracked:
-
-* 📈 Response time
-* 📊 Resolution rate
-* 😡 Sentiment trends
-* 🚨 Escalation frequency
-* 📂 Category distribution
-* ⚡ Priority breakdown (P1 / P2 / P3)
+👉 As soon as DB updates → UI updates instantly
 
 ---
 
-## 👩‍💻 Human-in-the-Loop System
+### 🔁 Automatic Fallback (Reliability Layer)
 
-* Escalated tickets are:
+If realtime fails:
 
-  * stored in Supabase
-  * visible on dashboard
-* Human agents:
+* Internet drops
+* Connection breaks
+* Supabase realtime not configured
 
-  * view context + sentiment + reason
-  * reply directly from dashboard (future UI)
-* Ensures:
+Then system switches to:
 
-  * high-risk cases handled safely
-  * no blind automation
+➡️ **Polling every 3 seconds**
 
----
+Ensures:
 
-## 💬 Chatbot Layer
-
-* Webhook-based entry (chat/email)
-* Real-time processing pipeline:
-
-  ```
-  User → Webhook → Classifier → Sentiment → Decision
-       → FAQ OR Escalation → Response
-  ```
-* Instant responses for FAQs
-* Smart fallback to human agents
+* No message loss
+* System always works
 
 ---
 
-## 🧪 Test Case Handling
+## 🔄 Smart Routing Behavior
 
-We explicitly designed flows for:
+### 🤖 Normal Flow
 
-### ✅ Normal Queries
+```
+User → Webhook → n8n → AI → Supabase → UI (realtime)
+```
 
-→ FAQ resolution
+---
 
-### ❌ FAQ Failures
+### 👩‍💻 Human-in-the-Loop (Bypass Mode)
 
-→ `NO_MATCH` → Escalation
+When escalation happens:
 
-### 😡 Negative Sentiment
+* ❌ n8n is BYPASSED
+* ✅ Messages go directly:
 
-→ Direct escalation (skips FAQ)
+```
+User ↔ Supabase ↔ Agent
+```
 
-### 🚨 Bad Words / Abuse
+👉 This ensures:
 
-→ Immediate escalation
+* Faster response
+* No AI interference
+* True real-time human chat
 
-### ⚠️ Threatening Messages
+---
 
-→ High-priority escalation (P1)
+## 🧠 Simple Memory System
 
-### ⏱️ Highly Urgent Cases
+* Messages stored in **Supabase**
+* Sessions stored in **localStorage**
+* Messages filtered by **timestamps**
 
-→ Fast-tracked to human agents
+Features:
+
+* Chat history
+* Session separation
+* Read-only past chats
+
+---
+
+## 🗄️ Database (Supabase)
+
+### Table: `messages`
+
+Stores:
+
+* sender (user / bot / agent / warning / pending_human)
+* content
+* timestamp
+
+Used for:
+
+* Real-time sync
+* Chat rendering
+* Agent communication
+
+---
+
+## 👩‍💻 Human Agent System
+
+When escalated:
+
+* Agent panel activates
+* Agent can:
+
+  * Reply in real-time
+  * Close conversation
+* Chat becomes:
+
+  * Direct human support channel
+
+---
+
+## ⚠️ Moderation & Safety
+
+* Detects abusive language
+* Issues warnings
+* After 2 warnings:
+
+  * Chat is automatically closed
 
 ---
 
 ## 🛠️ Tech Stack
 
-* **Orchestration:** n8n
-* **LLM:** Groq (GPT-OSS models)
+* **Frontend:** Vanilla JS (custom UI)
+* **Backend Orchestration:** n8n
+* **LLM:** Groq (GPT-OSS)
 * **Vector DB:** Pinecone
 * **Embeddings:** Google Gemini
-* **Database:** Supabase (PostgreSQL)
-* **Workflow Logic:** IF nodes + Agents
+* **Database & Realtime:** Supabase
 
 ---
 
-## 🏗️ System Flow (Simplified)
+## 🏗️ Actual System Flow
 
 ```
-Webhook
+User Message
    ↓
-Classifier Agent
+Frontend (fetch → webhook)
    ↓
-Sentiment Analyzer
+n8n Workflow
    ↓
-Decision Layer (IF nodes)
-   ├── FAQ Agent → Response → Log
-   └── Escalation → Ticket → Supabase → Human
+Classifier → Sentiment → Decision
+   ↓
+   ├── FAQ → Response → Supabase
+   └── Escalation → Supabase (pending_human)
+   ↓
+Supabase Realtime (WebSocket)
+   ↓
+Frontend UI Update
 ```
+
+---
+
+## 🔥 Special Features
+
+* ⚡ Real-time chat (WebSockets)
+* 🔁 Polling fallback (fault-tolerant)
+* 🔄 Human bypass mode (no AI interference)
+* 🧠 Session-based memory
+* 🚨 Intelligent escalation system
+* 🛡️ Safety + moderation layer
 
 ---
 
 ## 🚀 Future Scope
 
-* 🔹 Full React dashboard for agents
-* 🔹 Real-time human replies inside chat
-* 🔹 Advanced analytics (ML-based insights)
-* 🔹 Multi-language support
-* 🔹 Auto-priority learning system
-* 🔹 Slack / Email integration for escalations
+* Agent dashboard UI
+* Multi-language support
+* Analytics dashboards
+* Slack / Email integration
+* Auto-priority learning
 
 ---
 
 ## 🎯 Key Achievements
 
-* ✅ Multi-agent orchestration working end-to-end
+* ✅ Real-time AI + human hybrid system
+* ✅ WebSocket-based messaging (no refresh UX)
+* ✅ Reliable fallback system
 * ✅ Intelligent routing (not keyword-based)
-* ✅ Real-time sentiment + safety detection
-* ✅ RAG-based FAQ resolution
-* ✅ Human escalation pipeline
-* ✅ Full logging + analytics-ready system
+* ✅ Seamless human takeover
+* ✅ End-to-end working pipeline
 
+---
