@@ -4,6 +4,8 @@ FINAL CHATBOT IMAGES:
 
 <img width="1512" height="982" alt="image" src="https://github.com/user-attachments/assets/7cc02188-6816-4eec-bd0a-d543ad43e562" />
 
+<img width="1512" height="982" alt="image" src="https://github.com/user-attachments/assets/117e79fb-7a4c-4584-8c1d-206f9cecdeac" />
+
 
 
 
