@@ -1,0 +1,8 @@
+Real-Time Customer Support Chat System — Architecture
+A full-stack real-time chat architecture built on Supabase and n8n, designed to handle both automated bot responses and live human agent handoffs — with zero refresh, instant message delivery.
+The system runs two parallel modes. In bot mode, user messages are intercepted by the frontend and sent to an n8n webhook, which runs the AI processing pipeline and writes the bot response directly to Supabase. In human-in-the-loop mode, both the user and the agent write directly to Supabase — bypassing n8n entirely — keeping the conversation low-latency and simple. In both modes, Supabase acts as the central real-time bridge, pushing new messages instantly to all connected clients over WebSocket.
+The frontend maintains a persistent WebSocket subscription to Supabase Realtime, with a 3-second polling fallback in case the connection drops. A deduplication layer in the message renderer ensures no message is displayed twice regardless of how it arrived. Sessions are filtered by ID so agents only see the conversations assigned to them, and each chat carries a state — active, closed, or escalated — tracked directly in the database.
+Stack: Supabase · PostgreSQL · Supabase Realtime · n8n · WebSockets
+<img width="724" height="671" alt="image" src="https://github.com/user-attachments/assets/62df0cba-9a10-4215-9bb1-b17ecca8291e" />
+<img width="721" height="440" alt="image" src="https://github.com/user-attachments/assets/eb25da0b-4331-4466-8dd8-19c91a9a1f6e" />
+<img width="724" height="473" alt="image" src="https://github.com/user-attachments/assets/cd929db8-2ffa-4595-893e-386e3a067957" />

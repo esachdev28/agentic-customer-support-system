@@ -1,0 +1,994 @@
+{
+    "name": "Capstone Processing Unit",
+    "nodes": [
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "You are a friendly and professional customer support assistant.\n\nYou have access to a knowledge base tool. ALWAYS search it before answering.\n\nRules:\n- Only answer using information retrieved from the knowledge base\n- Keep your response under 150 words\n- Be warm and helpful in tone\n- If the answer is not found in the knowledge base, say exactly: \"I don't have specific information on that, but our support team will follow up with you shortly.\"\n- End every response with: \"Is there anything else I can help you with?\"\n\nDo NOT make up answers. Do NOT answer from your own knowledge.",
+                "options": {
+                    "systemMessage": "=You are a customer support assistant.\n\nMANDATORY RULES:\n1. You MUST use the \"Answer questions with a vector store\" tool to get information.\n2. Do NOT answer from your own knowledge.\n3. If the tool returns relevant data → use it to answer.\n4. If no relevant data is found → respond EXACTLY: NO_MATCH and do not respond ANYTHING else AT ALL even by mistake. ONLY with NO_MATCH\n\nContext Information:\n- Category: {{ $json.category }}\n- Urgency: {{ $json.urgency }}\n- Summary: {{ $json.context }}\n\nUser query:  \n{{ $('Webhook').item.json.body.message }}"
+                }
+            },
+            "id": "f0ca03af-e7dc-4c5b-b3bf-8278b9d5ed85",
+            "name": "FAQ Responder Agent",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1.7,
+            "position": [
+                -160,
+                464
+            ]
+        },
+        {
+            "parameters": {
+                "model": "openai/gpt-oss-120b",
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+            "typeVersion": 1,
+            "position": [
+                -160,
+                608
+            ],
+            "id": "fd0e5d43-7742-48a4-8a09-d2cabbf81e27",
+            "name": "Groq Chat Model - FAQ",
+            "credentials": {
+                "groqApi": {
+                    "id": "ivnFuIJhIcgYmvuY",
+                    "name": "Groq account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "description": "Search the FAQ knowledge base to find answers to customer support questions about billing, technical issues, account management, shipping, and refunds."
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+            "typeVersion": 1.1,
+            "position": [
+                -96,
+                720
+            ],
+            "id": "b532128d-3b4a-411b-bff2-f4789d9df5d9",
+            "name": "FAQ Knowledge Base Tool"
+        },
+        {
+            "parameters": {
+                "model": "openai/gpt-oss-120b",
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+            "typeVersion": 1,
+            "position": [
+                -48,
+                848
+            ],
+            "id": "87fed40a-eedd-4c76-a4bb-a2927a294a5a",
+            "name": "Groq Chat Model - KB",
+            "credentials": {
+                "groqApi": {
+                    "id": "ivnFuIJhIcgYmvuY",
+                    "name": "Groq account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "pineconeIndex": {
+                    "__rl": true,
+                    "value": "support-faq-index2",
+                    "mode": "list",
+                    "cachedResultName": "support-faq-index2"
+                },
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+            "typeVersion": 1.3,
+            "position": [
+                -176,
+                992
+            ],
+            "id": "6246831f-fce8-4e64-bf42-60155944e0a5",
+            "name": "Pinecone Vector Store",
+            "credentials": {
+                "pineconeApi": {
+                    "id": "SJ5zEJ9DLFBTMmAr",
+                    "name": "Pinecone account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "modelName": "models/gemini-embedding-001"
+            },
+            "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+            "typeVersion": 1,
+            "position": [
+                -176,
+                1152
+            ],
+            "id": "2d3e9a71-cc11-4581-b989-879ba3a0234c",
+            "name": "Embeddings Google Gemini",
+            "credentials": {
+                "googlePalmApi": {
+                    "id": "UL8aopNuzm6dPA5T",
+                    "name": "Gemini Model"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "return [{\n  json: {\n    status: 'resolved',\n    type: 'faq_response',\n    category: $('Code in JavaScript1').first().json.category,\n    urgency: $('Code in JavaScript1').first().json.urgency,\n    customerMessage: $('Code in JavaScript1').first().json.customerMessage,\n    response: $input.first().json.output,\n    timestamp: new Date().toISOString()\n  }\n}];"
+            },
+            "id": "9817ad2d-07d2-4713-a191-10f262ed6c82",
+            "name": "Format FAQ Response",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                176,
+                464
+            ]
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "support-query",
+                "responseMode": "lastNode",
+                "options": {
+                    "responseHeaders": {
+                        "entries": [
+                            {
+                                "name": "Access-Control-Allow-Origin",
+                                "value": "*"
+                            }
+                        ]
+                    }
+                }
+            },
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2.1,
+            "position": [
+                -1888,
+                16
+            ],
+            "id": "a051da2c-3ab3-423d-b463-d3da9a93ce9f",
+            "name": "Webhook",
+            "webhookId": "a608cdc6-964a-4c86-bc03-1c2242264139",
+            "retryOnFail": false
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "=You are an expert Customer Support Operations Analyst. Your task is to intelligently classify incoming support tickets to ensure proper routing.\n\n\n\nIf there is a threat or a cuss word or anything sexual that is not acceptable You need to reply in this output given below with empty text with the context and orignal user message:\n- category\n- urgency\n- context- give proper context but don't make things up yourself\n- message (original user message)\n\n### Guidelines:\n- Understand the user's intent, not just keywords.\n- Use reasoning to determine the most appropriate category.\n- If a query overlaps multiple categories, choose the most relevant one based on intent.\n\n### Category Options (use best judgment):\n- **billing**: Payments, invoices, charges, pricing\n- **technical**: Bugs, errors, system issues, features not working\n- **account**: Login issues, profile changes, authentication\n- **refund**: Refund requests, cancellations with money-back intent\n- **shipping**: Delivery, tracking, orders\n- **general**: Anything that doesn’t clearly fit above categories\n\n### Urgency Guidelines:\n- **high**: Critical issues, strong negative tone, urgent deadlines\n- **medium**: Functional issues affecting usage but not critical\n- **low**: General questions, information requests, minor issues\n\n### Output Requirement:\nReturn ONLY a valid JSON object with STRICTLY WITH THIS STRUCTURE EVEN IF THE CONTENT IS NOT ALLOWED, NOT NOT LOSE THIS STRUCTURE:\n- category\n- urgency\n- context- give proper context but don't make things up yourself\n- message (original user message)\n\nDo NOT include any extra text outside JSON.\n\n### Examples:\n- Message: \"I can't log in and I need to present in 10 minutes!\"  \n  -> {\"category\": \"account\", \"urgency\": \"high\", \"context\": \"User unable to log in urgently\", \"message\": \"I can't log in and I need to present in 10 minutes!\"}\n\n- Message: \"I was charged twice and this is unacceptable\"  \n  -> {\"category\": \"billing\", \"urgency\": \"high\", \"context\": \"User reports duplicate charge and is upset\", \"message\": \"I was charged twice and this is unacceptable\"}\n\n### User Message to Classify:\n{{ $('Webhook').item.json.body.message }}",
+                "batching": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.chainLlm",
+            "typeVersion": 1.9,
+            "position": [
+                -1456,
+                16
+            ],
+            "id": "4aa83087-029a-4b84-ba2d-684186b16bdf",
+            "name": "Basic LLM Chain1"
+        },
+        {
+            "parameters": {
+                "model": "openai/gpt-oss-120b",
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+            "typeVersion": 1,
+            "position": [
+                -1456,
+                192
+            ],
+            "id": "3d6b4ca7-5b0d-4343-ada4-298eef8c9f89",
+            "name": "Groq Chat Model1",
+            "credentials": {
+                "groqApi": {
+                    "id": "ivnFuIJhIcgYmvuY",
+                    "name": "Groq account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const text = $input.first().json.text;\nreturn [{ json: JSON.parse(text) }];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -1152,
+                16
+            ],
+            "id": "32067b53-ecfd-4c6a-8a54-6a7cdff3a5ea",
+            "name": "Code in JavaScript1"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "447535af-6b77-4b96-975b-7c6fd3642b95",
+                            "name": "Customer_Message",
+                            "value": "={{ $('Webhook').item.json.body.message }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "7a3251e8-9b24-4706-9e69-c1c355e4ece9",
+                            "name": "Reponse",
+                            "value": "={{ $json.response }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "e185d412-8a42-413d-808d-e49662e501a6",
+                            "name": "Status",
+                            "value": "={{ $json.status }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "a9a91b68-f8f4-4cd6-b5ce-9de0910fddbb",
+                            "name": "Category",
+                            "value": "={{ $json.category }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                352,
+                464
+            ],
+            "id": "8f1a3586-5400-411d-859e-f97a42260260",
+            "name": "Edit Fields"
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "==You are a sentiment and safety analyzer for a customer support system.\n\nYou will receive a classified support ticket. Your job is to deeply analyze the customer's tone, language, and intent.\n\nInput:\n- Category: {{ $json.category }}\n- Urgency: {{ $json.urgency }}\n- Context: {{ $json.context }}\n- Message: {{ $json.message }}\n\n### Your Task:\nAnalyze the message and return ONLY a valid JSON object with these fields:\n\n1. **sentiment**: one of [\"positive\", \"neutral\", \"frustrated\", \"angry\", \"threatening\"]\n2. **hasBadWords**: true if the message contains profanity, slurs, abusive language, sexual language, sexual innuendos, explicit content, or any inappropriate sexual references. false otherwise.\n3. **isHighlyUrgent**: true if the message is critical, time-sensitive, or the user is in panic/distress. false otherwise.\n4. **isThreatening**: true if the message contains threats, legal warnings, or aggressive intimidation. false otherwise.\n5. **escalationReason**: a short one-line reason explaining why this needs escalation (or \"none\" if no escalation needed)\n6. **category**: pass through from input\n7. **urgency**: pass through from input\n8. **context**: pass through from input\n9. **message**: pass through from input\n\n### Rules:\n- hasBadWords = true → profanity, slurs, sexual language, explicit content, sexual jokes, inappropriate references of any kind\n- isThreatening = true → legal threats, \"I will sue\", \"I will destroy\", \"you will regret\", etc.\n- isHighlyUrgent = true → words like \"immediately\", \"right now\", \"urgent\", \"emergency\", extreme frustration\n- sentiment = \"threatening\" → only if isThreatening is true\n- sentiment = \"angry\" → strong negative tone but no threats\n- sentiment = \"frustrated\" → clearly unhappy but calm enough\n\n### Output Format (ONLY JSON, no extra text):\n{\n  \"sentiment\": \"\",\n  \"hasBadWords\": false,\n  \"isHighlyUrgent\": false,\n  \"isThreatening\": false,\n  \"escalationReason\": \"\",\n  \"category\": \"\",\n  \"urgency\": \"\",\n  \"context\": \"\",\n  \"message\": \"\"\n}",
+                "batching": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.chainLlm",
+            "typeVersion": 1.9,
+            "position": [
+                -960,
+                16
+            ],
+            "id": "93f9ef58-f340-42a5-88f5-3775115854e8",
+            "name": "Sentiment Analyzer"
+        },
+        {
+            "parameters": {
+                "model": "openai/gpt-oss-120b",
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+            "typeVersion": 1,
+            "position": [
+                -960,
+                192
+            ],
+            "id": "fb7edcce-99f0-401d-8759-e123b379f1a5",
+            "name": "Groq Chat Model - Sentiment",
+            "credentials": {
+                "groqApi": {
+                    "id": "ivnFuIJhIcgYmvuY",
+                    "name": "Groq account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const raw = $input.first().json.text || '';\nlet parsed;\ntry {\n  const cleaned = raw.replace(/```json|```/g, '').trim();\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  parsed = {\n    sentiment: 'neutral',\n    hasBadWords: false,\n    isHighlyUrgent: false,\n    isThreatening: false,\n    escalationReason: 'none',\n    category: '',\n    urgency: '',\n    context: '',\n    message: ''\n  };\n}\n\nreturn [{ json: parsed }];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -672,
+                16
+            ],
+            "id": "e051a85a-fde9-4f77-ad6b-c4b675b047c0",
+            "name": "Parse Sentiment Output"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "bad-words-check",
+                            "leftValue": "={{ $json.hasBadWords }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        },
+                        {
+                            "id": "threatening-check",
+                            "leftValue": "={{ $json.isThreatening }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "or"
+                },
+                "options": {}
+            },
+            "id": "50fb3c61-4f23-4f20-a948-f6a841b48f15",
+            "name": "IF - Bad Words or Threatening",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                -464,
+                16
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "urgent-check",
+                            "leftValue": "={{ $json.isHighlyUrgent }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        },
+                        {
+                            "id": "urgency-high-check",
+                            "leftValue": "={{ $json.urgency }}",
+                            "rightValue": "high",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        },
+                        {
+                            "id": "sentiment-angry-check",
+                            "leftValue": "={{ $json.sentiment }}",
+                            "rightValue": "angry",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "10911a21-593f-4dc3-a223-b3d240e3983c",
+            "name": "IF - Escalate to Human",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                -304,
+                224
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "a4677e6f-111b-4597-92d4-657a26ab5f87",
+                            "leftValue": "={{ $json.Reponse }}",
+                            "rightValue": "NO_MATCH",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        },
+                        {
+                            "id": "2a786ec7-9322-4e8b-a57b-553ef8d0d280",
+                            "leftValue": "={{ $json.Reponse }}",
+                            "rightValue": "I don't have specific information on that, but our support team will follow up with you shortly. Is there anything else I can help you with?",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "or"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [
+                592,
+                464
+            ],
+            "id": "3c54d921-a5e8-4c95-91fa-081a3f42bae4",
+            "name": "If"
+        },
+        {
+            "parameters": {
+                "tableId": "messages",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "sender",
+                            "fieldValue": "bot"
+                        },
+                        {
+                            "fieldId": "content",
+                            "fieldValue": "={{ $json.Reponse }}"
+                        },
+                        {
+                            "fieldId": "created_at",
+                            "fieldValue": "={{ new Date().toISOString() }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                816,
+                752
+            ],
+            "id": "c740f0d1-2989-497f-8c69-569263d03cb3",
+            "name": "Create a row1",
+            "credentials": {
+                "supabaseApi": {
+                    "id": "Pi4vMgBySkqCtDio",
+                    "name": "CAPSTONE FINAL"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "tableId": "messages",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "sender",
+                            "fieldValue": "pending_human"
+                        },
+                        {
+                            "fieldId": "content",
+                            "fieldValue": "={{ $('Webhook').item.json.body.message }}"
+                        },
+                        {
+                            "fieldId": "created_at",
+                            "fieldValue": "={{ new Date().toISOString() }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                1680,
+                496
+            ],
+            "id": "24606c41-0cd6-4051-87bd-050737d2ffbb",
+            "name": "Create a row2",
+            "credentials": {
+                "supabaseApi": {
+                    "id": "Pi4vMgBySkqCtDio",
+                    "name": "CAPSTONE FINAL"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "tableId": "messages",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "sender",
+                            "fieldValue": "warning"
+                        },
+                        {
+                            "fieldId": "content",
+                            "fieldValue": "Warning: Please keep your language respectful. After 2 warnings your chat will be closed."
+                        },
+                        {
+                            "fieldId": "created_at",
+                            "fieldValue": "={{ new Date().toISOString() }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                0,
+                0
+            ],
+            "id": "db439e1e-d5b3-41b9-aaf8-4e2f0017fd9d",
+            "name": "Create a row3",
+            "credentials": {
+                "supabaseApi": {
+                    "id": "Pi4vMgBySkqCtDio",
+                    "name": "CAPSTONE FINAL"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "tableId": "messages",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "sender",
+                            "fieldValue": "pending_human"
+                        },
+                        {
+                            "fieldId": "content",
+                            "fieldValue": "={{ $('Webhook').item.json.body.message }}"
+                        },
+                        {
+                            "fieldId": "created_at",
+                            "fieldValue": "={{ new Date().toISOString() }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                0,
+                208
+            ],
+            "id": "6b0e815e-35a7-4c8e-b92f-92e15bf077c2",
+            "name": "Create a row5",
+            "credentials": {
+                "supabaseApi": {
+                    "id": "Pi4vMgBySkqCtDio",
+                    "name": "CAPSTONE FINAL"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "tableId": "messages",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "sender",
+                            "fieldValue": "user"
+                        },
+                        {
+                            "fieldId": "content",
+                            "fieldValue": "={{ $json.body.message }}"
+                        },
+                        {
+                            "fieldId": "created_at",
+                            "fieldValue": "={{ new Date().toISOString() }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                -1680,
+                16
+            ],
+            "id": "14e902ae-83a2-49a9-93bb-a0217c1f4806",
+            "name": "Create a row4",
+            "credentials": {
+                "supabaseApi": {
+                    "id": "Pi4vMgBySkqCtDio",
+                    "name": "CAPSTONE FINAL"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "=You are a query relevance validator for a customer support system.\nHere is the query: \nQuery: \"{{ $('Webhook').item.json.body.message }}\"\n\n\nYour job is to determine whether a user's message is a VALID customer \nsupport query that is genuinely related to the following support domains:\n\n- BILLING: charges, invoices, payment failures, billing cycles, subscriptions\n- TECHNICAL: app crashes, website issues, slow performance, bugs, missing features\n- GENERAL: platform services, contacting support, tutorials, feedback\n- ACCOUNT: creating account, password reset, profile updates, email changes, \n  account deletion\n- REFUND: refund requests, refund eligibility, refund timelines, partial refunds\n- SHIPPING: delivery times, order tracking, delayed orders, shipping address, \n  damaged products\n\nA query is VALID if:\n- It is asking about any topic even loosely related to the domains above\n- It is a complaint, request, or question about a product or service\n- It expresses urgency, frustration, or a problem even without specific keywords\n- It could reasonably come from a real customer needing support\n\nA query is INVALID if:\n- It is a casual greeting with no support intent \n  (e.g. \"hi\", \"hello\", \"how are you\", \"good morning\")\n- It is a random personal statement unrelated to support \n  (e.g. \"my name is manas\", \"I like pizza\", \"what is 2+2\")\n- It is a test message (e.g. \"test\", \"testing 123\", \"asdf\")\n- It is a general knowledge question unrelated to any support domain\n  (e.g. \"what is the capital of France\", \"who is Elon Musk\")\n- It is spam, gibberish, or completely off-topic content\n\nRespond with ONLY one of these two words, nothing else:\nVALID\nINVALID",
+                "batching": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.chainLlm",
+            "typeVersion": 1.9,
+            "position": [
+                944,
+                304
+            ],
+            "id": "61c466bb-2078-4143-8fdf-31f4188c0a30",
+            "name": "Validity Check"
+        },
+        {
+            "parameters": {
+                "model": "openai/gpt-oss-120b",
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+            "typeVersion": 1,
+            "position": [
+                944,
+                464
+            ],
+            "id": "f4446138-2b76-4fc7-8e13-e3efd4eba40b",
+            "name": "Groq Chat Model",
+            "credentials": {
+                "groqApi": {
+                    "id": "ivnFuIJhIcgYmvuY",
+                    "name": "Groq account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 3
+                    },
+                    "conditions": [
+                        {
+                            "id": "9ac53282-7e03-490d-a97a-1ee9a3398235",
+                            "leftValue": "={{ $json.text }}",
+                            "rightValue": "=INVALID",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [
+                1296,
+                304
+            ],
+            "id": "229d361a-9d29-42e9-8d38-709c96ee8aca",
+            "name": "If1"
+        },
+        {
+            "parameters": {
+                "tableId": "messages",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "sender",
+                            "fieldValue": "bot"
+                        },
+                        {
+                            "fieldId": "content",
+                            "fieldValue": "=Hello, I can only assist with billing, account, technical, refund, shipping, or general support queries. Please rephrase your question or contact support directly."
+                        },
+                        {
+                            "fieldId": "created_at",
+                            "fieldValue": "={{ new Date().toISOString() }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                1664,
+                288
+            ],
+            "id": "f5b8a516-769d-4dfa-889e-61230bdb6b5f",
+            "name": "Create a row",
+            "credentials": {
+                "supabaseApi": {
+                    "id": "Pi4vMgBySkqCtDio",
+                    "name": "CAPSTONE FINAL"
+                }
+            }
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "FAQ Responder Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Format FAQ Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Groq Chat Model - FAQ": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "FAQ Responder Agent",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "FAQ Knowledge Base Tool": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "FAQ Responder Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Groq Chat Model - KB": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "FAQ Knowledge Base Tool",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Pinecone Vector Store": {
+            "ai_vectorStore": [
+                [
+                    {
+                        "node": "FAQ Knowledge Base Tool",
+                        "type": "ai_vectorStore",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Embeddings Google Gemini": {
+            "ai_embedding": [
+                [
+                    {
+                        "node": "Pinecone Vector Store",
+                        "type": "ai_embedding",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format FAQ Response": {
+            "main": [
+                [
+                    {
+                        "node": "Edit Fields",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Create a row4",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Basic LLM Chain1": {
+            "main": [
+                [
+                    {
+                        "node": "Code in JavaScript1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Groq Chat Model1": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Basic LLM Chain1",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code in JavaScript1": {
+            "main": [
+                [
+                    {
+                        "node": "Sentiment Analyzer",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Edit Fields": {
+            "main": [
+                [
+                    {
+                        "node": "If",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Sentiment Analyzer": {
+            "main": [
+                [
+                    {
+                        "node": "Parse Sentiment Output",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Groq Chat Model - Sentiment": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Sentiment Analyzer",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Parse Sentiment Output": {
+            "main": [
+                [
+                    {
+                        "node": "IF - Bad Words or Threatening",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF - Bad Words or Threatening": {
+            "main": [
+                [
+                    {
+                        "node": "Create a row3",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "IF - Escalate to Human",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF - Escalate to Human": {
+            "main": [
+                [
+                    {
+                        "node": "Create a row5",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "FAQ Responder Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "If": {
+            "main": [
+                [
+                    {
+                        "node": "Validity Check",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Create a row1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create a row4": {
+            "main": [
+                [
+                    {
+                        "node": "Basic LLM Chain1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validity Check": {
+            "main": [
+                [
+                    {
+                        "node": "If1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Groq Chat Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Validity Check",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "If1": {
+            "main": [
+                [
+                    {
+                        "node": "Create a row",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Create a row2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": true,
+    "settings": {
+        "executionOrder": "v1",
+        "binaryMode": "separate"
+    },
+    "versionId": "fe4cb0f7-efc7-41ea-a4e5-7dd79e1e698c",
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "27627fa8409d528b1c2b22597c83a60b9953ce680b92f1a5f18e32e73f7e7aed"
+    },
+    "id": "RpZ8RUr06pYChG8f",
+    "tags": []
+}

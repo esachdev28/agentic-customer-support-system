@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SupportDesk — AI Customer Support</title>
+  <meta name="description" content="Enterprise-grade AI-powered customer support platform with human escalation.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=10">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+  <div class="app-layout">
+
+    <!-- ========= SIDEBAR ========= -->
+    <aside class="sidebar">
+      <!-- Brand -->
+      <div class="sidebar-brand">
+        <div class="brand-logo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">SupportDesk</span>
+          <span class="brand-sub">AI Platform</span>
+        </div>
+      </div>
+
+      <!-- New Chat -->
+      <button id="new-chat-btn" class="new-chat-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <span>New Conversation</span>
+      </button>
+
+      <!-- History Header -->
+      <div class="history-section-label">
+        <span>Recent</span>
+      </div>
+
+      <!-- Sessions List -->
+      <div id="history-list" class="history-list"></div>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-user">
+          <div class="footer-avatar">C</div>
+          <div class="footer-user-info">
+            <span class="footer-user-name">Customer</span>
+            <span class="footer-user-role">Support Session</span>
+          </div>
+        </div>
+        <button id="clear-history-btn" class="clear-history-btn" title="Clear all history">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ========= MAIN CONTENT ========= -->
+    <main class="main-content">
+
+      <!-- ── Customer Panel ── -->
+      <section class="panel chat-panel" id="customer-panel">
+        <!-- Panel Header -->
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <div class="panel-avatar bot-avatar">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+            </div>
+            <div class="panel-header-info">
+              <h2>FOAI Support Assistant</h2>
+              <div class="panel-status-row">
+                <span class="status-dot active-dot"></span>
+                <span id="chat-status-indicator" class="panel-status-text">Online</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel-header-right">
+            <div class="header-badge">AI Powered</div>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="messages-container" id="customer-messages"></div>
+
+        <!-- Typing Indicator -->
+        <div id="typing-indicator" class="typing-indicator-wrap hidden">
+          <div class="typing-avatar">AI</div>
+          <div class="typing-bubble">
+            <span class="typing-label">Support is typing</span>
+            <div class="typing-dots">
+              <div class="dot"></div>
+              <div class="dot"></div>
+              <div class="dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Policy Violation Overlay -->
+        <div id="violation-message" class="hidden violation-overlay">
+          <div class="violation-card">
+            <div class="violation-icon-wrap">⚠️</div>
+            <h3 class="violation-title">Conversation Closed</h3>
+            <p class="violation-desc">This chat has been closed due to a policy violation. Please start a new conversation.</p>
+          </div>
+        </div>
+
+        <!-- Input -->
+        <div class="input-area" id="customer-input-area">
+          <div class="input-wrapper">
+            <input type="text" id="customer-input" placeholder="Type your message…" autocomplete="off">
+            <button id="customer-send" class="send-btn" aria-label="Send Message">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+          </div>
+          <p class="input-disclaimer">Powered by FOAI · Press Enter to send</p>
+        </div>
+      </section>
+
+      <!-- ── Agent Panel ── -->
+      <section class="panel agent-panel inactive" id="agent-panel">
+        <!-- Panel Header -->
+        <div class="panel-header agent-header">
+          <div class="panel-header-left">
+            <div class="panel-avatar agent-avatar">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </div>
+            <div class="panel-header-info">
+              <h2>Human Agent Workspace</h2>
+              <div class="panel-status-row">
+                <span class="status-dot offline-dot"></span>
+                <span class="panel-status-text">Monitoring queue</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel-header-right">
+            <div id="agent-notification" class="hidden pulse-badge">⚡ Escalated</div>
+            <button id="close-conversation-btn" class="hidden btn-danger">Close Chat</button>
+          </div>
+        </div>
+
+        <!-- Idle State -->
+        <div class="agent-content" id="agent-idle-content">
+          <div class="agent-idle-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.55a16 16 0 0 0 5.55 5.55l1.4-1.4a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 15z"></path></svg>
+          </div>
+          <p class="agent-idle-title">Awaiting Escalation</p>
+          <p class="agent-idle-sub">You'll be notified when a customer needs human support</p>
+        </div>
+
+        <!-- Input -->
+        <div class="input-area" id="agent-input-area">
+          <div class="input-wrapper">
+            <input type="text" id="agent-input" placeholder="Reply as agent…" autocomplete="off" disabled>
+            <button id="agent-send" disabled class="send-btn" aria-label="Agent Send">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ========= MODAL ========= -->
+  <div id="custom-modal-overlay" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-icon-wrap">🗑️</div>
+      <h3 id="modal-title">Confirm Action</h3>
+      <p id="modal-desc">Are you sure you want to proceed? This cannot be undone.</p>
+      <div class="modal-actions">
+        <button id="modal-cancel-btn" class="modal-btn cancel">Cancel</button>
+        <button id="modal-confirm-btn" class="modal-btn danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=4"></script>
+</body>
+
+</html>
