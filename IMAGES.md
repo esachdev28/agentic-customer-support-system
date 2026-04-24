@@ -1,3 +1,9 @@
+FINAL CHATBOT IMAGES:
+
+<img width="1512" height="982" alt="image" src="https://github.com/user-attachments/assets/4b226926-c527-47ac-b27e-d3b15f15b08a" />
+
+
+
 
 Images:
 
